@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Friends GPS Invoice Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #000;
+      text-align: center;
+      padding: 10px;
+    }
+    header img {
+      height: 80px;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 20px;
+    }
+    .form-section, .preview-section {
+      flex: 1 1 500px;
+      padding: 20px;
+      background-color: #1c1c1c;
+      margin: 10px;
+      border-radius: 8px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0 15px;
+      border-radius: 4px;
+      border: none;
+    }
+    input[type="button"], button {
+      background-color: #4A00E0;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin-top: 10px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+    table, th, td {
+      border: 1px solid #444;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    .preview-box {
+      background-color: #222;
+      padding: 15px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="friends-logo.png" alt="Friends GPS Logo">
+</header>
+
+<div class="container">
+  <div class="form-section">
+    <h2>Invoice Details</h2>
+    <input type="text" id="customerName" placeholder="Customer Name"/>
+    <input type="text" id="invoiceNumber" placeholder="Invoice Number"/>
+    <input type="date" id="invoiceDate"/>
+    <table id="itemsTable">
+      <thead>
+        <tr>
+          <th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="addItem()">+ Add Item</button>
+    <textarea id="notes" placeholder="Additional Notes..."></textarea>
+    <button onclick="generatePDF()">Download PDF</button>
+  </div>
+
+  <div class="preview-section">
+    <h2>Invoice Preview</h2>
+    <div class="preview-box" id="invoicePreview">
+      <h3>Friends GPS Devices & Supports</h3>
+      <p id="pCustomer"></p>
+      <p id="pInvoiceNum"></p>
+      <p id="pDate"></p>
+      <table id="previewTable">
+        <thead>
+          <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="pNotes"></p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+  function addItem() {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><input type="text" class="itemName" placeholder="Item Name"/></td>
+      <td><input type="number" class="itemQty" value="1" min="1" onchange="updatePreview()"/></td>
+      <td><input type="number" class="itemPrice" value="0" min="0" onchange="updatePreview()"/></td>
+      <td class="itemTotal">0</td>
+      <td><button onclick="removeRow(this)">X</button></td>
+    `;
+    document.querySelector('#itemsTable tbody').appendChild(row);
+    updatePreview();
+  }
+
+  function removeRow(button) {
+    button.parentElement.parentElement.remove();
+    updatePreview();
+  }
+
+  function updatePreview() {
+    document.getElementById("pCustomer").innerText = "Customer: " + document.getElementById("customerName").value;
+    document.getElementById("pInvoiceNum").innerText = "Invoice #: " + document.getElementById("invoiceNumber").value;
+    document.getElementById("pDate").innerText = "Date: " + document.getElementById("invoiceDate").value;
+    document.getElementById("pNotes").innerText = document.getElementById("notes").value;
+
+    const tbody = document.querySelector("#previewTable tbody");
+    tbody.innerHTML = "";
+
+    document.querySelectorAll("#itemsTable tbody tr").forEach(row => {
+      const name = row.querySelector(".itemName").value;
+      const qty = +row.querySelector(".itemQty").value;
+      const price = +row.querySelector(".itemPrice").value;
+      const total = qty * price;
+      row.querySelector(".itemTotal").innerText = total.toFixed(2);
+
+      const previewRow = document.createElement("tr");
+      previewRow.innerHTML = `<td>${name}</td><td>${qty}</td><td>${price.toFixed(2)}</td><td>${total.toFixed(2)}</td>`;
+      tbody.appendChild(previewRow);
+    });
+  }
+
+  function generatePDF() {
+    updatePreview();
+    const invoice = document.getElementById("invoicePreview");
+    html2pdf().from(invoice).save("Invoice.pdf");
+  }
+</script>
+
+</body>
+</html>
